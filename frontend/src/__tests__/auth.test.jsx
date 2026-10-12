@@ -85,4 +85,19 @@ describe('Authentication & Token Management', () => {
     expect(screen.getByTestId('auth-status').textContent).toBe('unauthenticated');
     expect(screen.getByTestId('user-role').textContent).toBe('none');
   });
+
+  it('normalizes API URLs and prevents duplicated /api path segments', async () => {
+    const { buildApiUrl } = await import('../api/client');
+
+    // Full absolute external URLs are preserved untouched
+    expect(buildApiUrl('https://api.external.com/data')).toBe('https://api.external.com/data');
+    expect(buildApiUrl('http://custom-server.org/status')).toBe('http://custom-server.org/status');
+
+    // When VITE_API_BASE_URL is not set, returns clean relative path
+    const relativeUrl = buildApiUrl('/api/services/');
+    expect(relativeUrl).toBe('/api/services/');
+
+    // Handles missing leading slash
+    expect(buildApiUrl('api/auth/login/')).toBe('/api/auth/login/');
+  });
 });

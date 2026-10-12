@@ -4,6 +4,28 @@
  * automatic token refresh on 401, and normalized error extraction.
  */
 
+/**
+ * Normalizes and builds the target API URL.
+ * Handles trailing slashes, prevents duplicate '/api' segments,
+ * and preserves relative routes for dev proxying.
+ */
+export function buildApiUrl(endpoint) {
+  if (!endpoint || typeof endpoint !== 'string') return '';
+  if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) {
+    return endpoint;
+  }
+
+  const rawBase = (import.meta.env.VITE_API_BASE_URL || '').trim();
+  const cleanBase = rawBase.replace(/\/+$/, '');
+  let cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+
+  if (cleanBase.endsWith('/api') && cleanEndpoint.startsWith('/api/')) {
+    cleanEndpoint = cleanEndpoint.slice(4);
+  }
+
+  return cleanBase ? `${cleanBase}${cleanEndpoint}` : cleanEndpoint;
+}
+
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 let isRefreshing = false;
@@ -64,7 +86,7 @@ export function extractErrorMessage(errorData, fallback = 'An unexpected error o
 }
 
 export async function apiRequest(endpoint, options = {}) {
-  const url = endpoint.startsWith('http') ? endpoint : `${BASE_URL}${endpoint}`;
+  const url = buildApiUrl(endpoint);
   const headers = {
     'Content-Type': 'application/json',
     ...(options.headers || {})
@@ -92,7 +114,7 @@ export async function apiRequest(endpoint, options = {}) {
       if (!isRefreshing) {
         isRefreshing = true;
         try {
-          const refreshRes = await fetch(`${BASE_URL}/api/auth/refresh/`, {
+          const refreshRes = await fetch(buildApiUrl('/api/auth/refresh/'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ refresh })
