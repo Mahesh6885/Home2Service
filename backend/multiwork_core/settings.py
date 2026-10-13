@@ -12,8 +12,8 @@ dotenv.load_dotenv(BASE_DIR / '.env')
 SECRET_KEY = os.getenv('SECRET_KEY', 'multiwork-django-insecure-dev-key-2026')
 DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 'yes')
 
-ALLOWED_HOSTS = [h.strip() for h in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,testserver').split(',') if h.strip()]
-for default_host in ['localhost', '127.0.0.1', 'testserver']:
+ALLOWED_HOSTS = [h.strip() for h in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,testserver,home2service-api.onrender.com,home2service-backend.onrender.com').split(',') if h.strip()]
+for default_host in ['localhost', '127.0.0.1', 'testserver', 'home2service-api.onrender.com', 'home2service-backend.onrender.com']:
     if default_host not in ALLOWED_HOSTS:
         ALLOWED_HOSTS.append(default_host)
 
@@ -181,13 +181,26 @@ SIMPLE_JWT = {
 
 # CORS Configuration
 CORS_ALLOW_ALL_ORIGINS = DEBUG
+default_cors = 'http://localhost:5173,http://127.0.0.1:5173,https://home2-service.vercel.app,https://home2service.vercel.app'
 CORS_ALLOWED_ORIGINS = [
-    origin.strip() for origin in os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173').split(',') if origin.strip()
+    origin.strip() for origin in os.getenv('CORS_ALLOWED_ORIGINS', default_cors).split(',') if origin.strip()
+]
+# Ensure production Vercel domains are always authorized even if env var overrides
+for prod_origin in ['https://home2-service.vercel.app', 'https://home2service.vercel.app']:
+    if prod_origin not in CORS_ALLOWED_ORIGINS:
+        CORS_ALLOWED_ORIGINS.append(prod_origin)
+
+# Whitelist all Vercel deployments (previews, production) and local development ports
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.vercel\.app$",
+    r"^http://localhost(:\d+)?$",
+    r"^http://127\.0\.0\.1(:\d+)?$",
 ]
 
 # CSRF Configuration for Production
+default_csrf = 'https://home2-service.vercel.app,https://home2service.vercel.app'
 CSRF_TRUSTED_ORIGINS = [
-    origin.strip() for origin in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',') if origin.strip()
+    origin.strip() for origin in os.getenv('CSRF_TRUSTED_ORIGINS', default_csrf).split(',') if origin.strip()
 ]
 # Automatically mirror HTTPS origins from CORS to CSRF trusted origins
 for origin in CORS_ALLOWED_ORIGINS:

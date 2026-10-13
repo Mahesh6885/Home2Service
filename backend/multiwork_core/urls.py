@@ -25,9 +25,11 @@ from apps.bookings.views import (
 
 from apps.notifications.views import AdminAuditEventListView
 from apps.accounts.views import WorkerLocationUpdateView
-from multiwork_core.health import HealthCheckView
+from multiwork_core.health import HealthCheckView, ApiRootView
 
 urlpatterns = [
+    path('', ApiRootView.as_view(), name='root_index'),
+    path('api/', ApiRootView.as_view(), name='api_index'),
     path('admin/', admin.site.urls),
     path('api/health/', HealthCheckView.as_view(), name='api_health_check'),
     path('api/auth/', include('apps.accounts.urls')),
